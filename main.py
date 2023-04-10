@@ -1,106 +1,78 @@
 import telebot
-import os
 from random import choice
-from game import HANGMAN
+from hangman_game import HANGMAN, HangmanGame
+from text_to_speech import convert
+from chatGPT import talk_to_chatGPT
+import creditials
+bot = telebot.TeleBot(creditials.telegramTOKEN)
 
-bot = telebot.TeleBot('6191246167:AAExRk5YkSN8w1JUhrWheop9Ndra8C9f5F8')
+
 @bot.message_handler(commands=['start'])
 def start(message):
     mess = f"<b>Привет</b> <u>{message.from_user.first_name}</u> <u>{message.from_user.last_name}</u>"
-    bot.send_message(message.chat.id,mess, parse_mode='html')
+    bot.send_message(message.chat.id, mess, parse_mode='html')
 
-game_viseltsa = False
 
-max_wrong = len(HANGMAN) - 1
-WORDS = ("python", "игра", "программирование")  # Слова для угадывания
+@bot.message_handler(commands=['speech'])
+def text_to_speech(message):
+    text = message.text[8:]
+    convert(text)
+    with open('msg.mp3', 'rb') as f:
+        bot.send_audio(message.chat.id, f)
 
-word = choice(WORDS)  # Слово, которое нужно угадать
-so_far = "_" * len(word)  # Одна черточка для каждой буквы в слове, которое нужно угадать
-wrong = 0  # Количество неверных предположений, сделанных игроком
-used = []  # Буквы уже угаданы
 
-type_otv = 1
+@bot.message_handler(commands=['chatGPT'])
+def chatGPT(message):
+    text = ' '.join(message.text.split(' ')[1:])
+    answer = talk_to_chatGPT(text)
+    bot.send_message(message.chat.id, answer)
 
-def vopros1():
-    global so_far
-    global used
-    c = HANGMAN[wrong]  # Вывод висельника по индексу
-    c += "\nВы использовали следующие буквы:\n"
-    c += str(used)
-    c += "\nНа данный момент слово выглядит так:\n"
-    c += so_far
 
-    c += "\n\nВведите свое предположение: "  # Пользователь вводит предполагаемую букву
-    return c
+# =========================================================================
+
+
+
+hg = HangmanGame()
+hg.game_viseltsa = False
 
 
 @bot.message_handler()
 def get_user_text(message):
-    global game_viseltsa
-    global type_otv
-
-    global max_wrong 
-    global WORDS
-
-    global word
-    global so_far
-    global wrong
-    global used
-
-    if game_viseltsa:
+    if hg.game_viseltsa:
         guess = message.text
-        if type_otv == 1:
 
-            if guess in used:
-                c = "Вы уже вводили букву"
-                c += guess  # Если буква уже вводилась ранее, то выводим соответствующее сообщение
-                c += "Введите свое предположение: "  # Пользователь вводит предполагаемую букву
+        if guess in hg.used:
+            bot.send_message(message.chat.id,
+                             f'Вы уже вводили букву {guess}. Введите свое предположение:')
+        else:
+            hg.used.append(guess)
+            if guess in hg.word:
+                c = f"\nДа! \" {guess} \" есть в слове!"
+                indxs = [i for i in range(len(hg.word)) if hg.word[i] == guess]
+                for indx in indxs:
+                    hg.so_far[indx] = guess
+                if hg.so_far.count('_') == 0:
+                    c += f"\nВы угадали слово! {hg.word}"
+                    hg.game_viseltsa = False
+                else:
+                    c += hg.info()
                 bot.send_message(message.chat.id, c)
             else:
-                used.append(guess)  # В список использованных букв добавляется введённая буква
-
-                if guess in word:  # Если введённая буква есть в загаданном слове, то выводим соответствующее сообщение
-                    c = "\nДа! \""
-                    c += guess
-                    c += "\" есть в слове!"
-
-                    new = ""
-                    for i in range(len(word)):  # В цикле добавляем найденную букву в нужное место
-                        if guess == word[i]:
-                            new += guess
-                        else:
-                            new += so_far[i]
-                    so_far = new
-                    if so_far == word:
-                        c += "\nВы угадали слово!"
-                        game_viseltsa = False
-                    else:
-                        c += vopros1()
-                    bot.send_message(message.chat.id, c)
+                c = f"\nИзвините, буквы \" {guess} \" нет в слове."
+                hg.wrong += 1
+                if hg.wrong >= hg.max_wrong:
+                    c += HANGMAN[hg.wrong]
+                    c += "\nТебя повесили!"
+                    hg.game_viseltsa = False
                 else:
-                    c = "\nИзвините, буквы \"" 
-                    c += guess 
-                    c += "\" нет в слове."  # Если буквы нет, то выводим соответствующее сообщение
-                    wrong += 1
-
-                    if wrong >= max_wrong:
-                        c += HANGMAN[wrong]
-                        c += "\nТебя повесили!"
-                        game_viseltsa = False
-                    else:
-                        c += vopros1()
-
-                    bot.send_message(message.chat.id, c)
-
+                    c += hg.info()
+                bot.send_message(message.chat.id, c)
     else:
         if message.text == "виселица":
-            wrong = 0
-            type_otv = 1
-            game_viseltsa = True
-            used = []
-            word = choice(WORDS)  # Слово, которое нужно угадать
-            so_far = "_" * len(word)  # Одна черточка для каждой буквы в слове, которое нужно угадать
-            bot.send_message(message.chat.id, "Давай поиграем в виселицу, я загадал слово из букв, попробуй отгадать\n" + vopros1())
-            
-    
+            hg.game_viseltsa = True
+            hg.__init__()
+            bot.send_message(
+                message.chat.id, "Давай поиграем в виселицу, я загадал слово из букв, попробуй отгадать\n" + hg.info())
+
+
 bot.polling(none_stop=True)

@@ -1,0 +1,2 @@
+chatGPTtoken = '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'
+telegramTOKEN = "6191246167:AAExRk5YkSN8w1JUhrWheop9Ndra8C9f5F8"
