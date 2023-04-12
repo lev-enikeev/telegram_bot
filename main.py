@@ -1,7 +1,7 @@
 import telebot
 from random import choice
 from hangman_game import HANGMAN, HangmanGame
-from text_to_speech import convert
+from text_to_speech import tex_to_speech, speech_to_text
 from chatGPT import talk_to_chatGPT
 from credentials import telegramTOKEN
 bot = telebot.TeleBot(telegramTOKEN)
@@ -16,7 +16,7 @@ def start(message):
 @bot.message_handler(commands=['speech'])
 def text_to_speech(message):
     text = message.text[8:]
-    convert(text)
+    tex_to_speech(text)
     with open('msg.mp3', 'rb') as f:
         bot.send_audio(message.chat.id, f)
 
@@ -27,6 +27,16 @@ def chatGPT(message):
     answer = talk_to_chatGPT(text)
     bot.send_message(message.chat.id, answer)
 
+
+@bot.message_handler(content_types=['voice'])
+def voice_processing(message):
+    file_info = bot.get_file(message.voice.file_id)
+    downloaded_file = bot.download_file(file_info.file_path)
+    with open('audio.ogg', 'wb') as new_file:
+        new_file.write(downloaded_file)
+    bot.send_message(message.chat.id, 'обрабатывется...')
+    text = speech_to_text()
+    bot.send_message(message.chat.id, text)
 
 # =========================================================================
 
