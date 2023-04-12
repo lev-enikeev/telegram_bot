@@ -3,8 +3,8 @@ from random import choice
 from hangman_game import HANGMAN, HangmanGame
 from text_to_speech import convert
 from chatGPT import talk_to_chatGPT
-import creditials
-bot = telebot.TeleBot(creditials.telegramTOKEN)
+from credentials import telegramTOKEN
+bot = telebot.TeleBot(telegramTOKEN)
 
 
 @bot.message_handler(commands=['start'])
@@ -31,7 +31,6 @@ def chatGPT(message):
 # =========================================================================
 
 
-
 hg = HangmanGame()
 hg.game_viseltsa = False
 
@@ -39,40 +38,13 @@ hg.game_viseltsa = False
 @bot.message_handler()
 def get_user_text(message):
     if hg.game_viseltsa:
-        guess = message.text
-
-        if guess in hg.used:
-            bot.send_message(message.chat.id,
-                             f'Вы уже вводили букву {guess}. Введите свое предположение:')
-        else:
-            hg.used.append(guess)
-            if guess in hg.word:
-                c = f"\nДа! \" {guess} \" есть в слове!"
-                indxs = [i for i in range(len(hg.word)) if hg.word[i] == guess]
-                for indx in indxs:
-                    hg.so_far[indx] = guess
-                if hg.so_far.count('_') == 0:
-                    c += f"\nВы угадали слово! {hg.word}"
-                    hg.game_viseltsa = False
-                else:
-                    c += hg.info()
-                bot.send_message(message.chat.id, c)
-            else:
-                c = f"\nИзвините, буквы \" {guess} \" нет в слове."
-                hg.wrong += 1
-                if hg.wrong >= hg.max_wrong:
-                    c += HANGMAN[hg.wrong]
-                    c += "\nТебя повесили!"
-                    hg.game_viseltsa = False
-                else:
-                    c += hg.info()
-                bot.send_message(message.chat.id, c)
+        game_message = hg.game_step(message.text)
+        bot.send_message(message.chat.id, game_message)
     else:
         if message.text == "виселица":
-            hg.game_viseltsa = True
-            hg.__init__()
-            bot.send_message(
-                message.chat.id, "Давай поиграем в виселицу, я загадал слово из букв, попробуй отгадать\n" + hg.info())
+            hg.start()
+            game_message = "Давай поиграем в виселицу, я загадал слово из букв, попробуй отгадать\n" + hg.info()
+            bot.send_message(message.chat.id, game_message)
 
 
 bot.polling(none_stop=True)
