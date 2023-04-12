@@ -1,5 +1,5 @@
 import requests
-from creditials import chatGPTtoken
+from credentials import chatGPTtoken
 
 
 def talk_to_chatGPT(message):

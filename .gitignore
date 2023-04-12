@@ -1,4 +1,6 @@
-creditials.py
+credentials.py
 __pycache__
 .vscode
 *.mp3
+*.ogg
+*.wav

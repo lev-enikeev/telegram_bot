@@ -1,10 +1,10 @@
 import telebot
-from hangman_game import HANGMAN, HangmanGame
-from text_to_speech import convert
+from hangman_game import HangmanGame
+from text_to_speech import tex_to_speech, speech_to_text
 from chatGPT import talk_to_chatGPT
-import creditials
+from credentials import telegramTOKEN
+bot = telebot.TeleBot(telegramTOKEN)
 
-bot = telebot.TeleBot(creditials.telegramTOKEN)
 
 
 @bot.message_handler(commands=['start'])
@@ -16,7 +16,7 @@ def start(message):
 @bot.message_handler(commands=['speech'])
 def text_to_speech(message):
     text = message.text[8:]
-    convert(text)
+    tex_to_speech(text)
     with open('msg.mp3', 'rb') as f:
         bot.send_audio(message.chat.id, f)
 
@@ -28,8 +28,17 @@ def chatGPT(message):
     bot.send_message(message.chat.id, answer)
 
 
-# =========================================================================
+@bot.message_handler(content_types=['voice'])
+def voice_processing(message):
+    file_info = bot.get_file(message.voice.file_id)
+    downloaded_file = bot.download_file(file_info.file_path)
+    with open('audio.ogg', 'wb') as new_file:
+        new_file.write(downloaded_file)
+    bot.send_message(message.chat.id, 'обрабатывется...')
+    text = speech_to_text()
+    bot.send_message(message.chat.id, text)
 
+# =========================================================================
 
 
 hg = HangmanGame()
@@ -39,40 +48,13 @@ hg.game_viseltsa = False
 @bot.message_handler()
 def get_user_text(message):
     if hg.game_viseltsa:
-        guess = message.text
-
-        if guess in hg.used:
-            bot.send_message(message.chat.id,
-                             f'Вы уже вводили букву {guess}. Введите свое предположение:')
-        else:
-            hg.used.append(guess)
-            if guess in hg.word:
-                c = f"\nДа! \" {guess} \" есть в слове!"
-                indxs = [i for i in range(len(hg.word)) if hg.word[i] == guess]
-                for indx in indxs:
-                    hg.so_far[indx] = guess
-                if hg.so_far.count('_') == 0:
-                    c += f"\nВы угадали слово! {hg.word}"
-                    hg.game_viseltsa = False
-                else:
-                    c += hg.info()
-                bot.send_message(message.chat.id, c)
-            else:
-                c = f"\nИзвините, буквы \" {guess} \" нет в слове."
-                hg.wrong += 1
-                if hg.wrong >= hg.max_wrong:
-                    c += HANGMAN[hg.wrong]
-                    c += "\nТебя повесили!"
-                    hg.game_viseltsa = False
-                else:
-                    c += hg.info()
-                bot.send_message(message.chat.id, c)
+        game_message = hg.game_step(message.text)
+        bot.send_message(message.chat.id, game_message)
     else:
         if message.text == "виселица":
-            hg.game_viseltsa = True
-            hg.__init__()
-            bot.send_message(
-                message.chat.id, "Давай поиграем в виселицу, я загадал слово из букв, попробуй отгадать\n" + hg.info())
+            hg.start()
+            game_message = "Давай поиграем в виселицу, я загадал слово из букв, попробуй отгадать\n" + hg.info()
+            bot.send_message(message.chat.id, game_message)
 
 
 bot.polling(none_stop=True)
