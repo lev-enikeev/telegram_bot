@@ -1,9 +1,9 @@
 import telebot
-from random import choice
 from hangman_game import HANGMAN, HangmanGame
 from text_to_speech import convert
 from chatGPT import talk_to_chatGPT
 import creditials
+
 bot = telebot.TeleBot(creditials.telegramTOKEN)
 
 
