@@ -1,7 +1,9 @@
 import telebot
+from telebot import types
 from hangman_game import HangmanGame
 from text_to_speech import tex_to_speech, speech_to_text
 from chatGPT import talk_to_chatGPT
+from wikipedia_api import search_wiki
 from credentials import telegramTOKEN
 bot = telebot.TeleBot(telegramTOKEN)
 
@@ -19,6 +21,18 @@ def text_to_speech(message):
     tex_to_speech(text)
     with open('msg.mp3', 'rb') as f:
         bot.send_audio(message.chat.id, f)
+
+
+@bot.message_handler(commands=['wiki'])
+def wiki(message):
+    text = message.text[6:]
+    results = search_wiki(text)
+    markup = types.InlineKeyboardMarkup()
+    for res in results:
+        btn = types.InlineKeyboardButton(res, callback_data="test")
+        markup.add(btn)
+    bot.send_message(message.chat.id, text=f"Привет, {message.from_user.first_name}! Вот что нашел в wiki", reply_markup=markup)
+
 
 
 @bot.message_handler(commands=['chatGPT'])
