@@ -34,7 +34,6 @@ def wiki(message):
     bot.send_message(message.chat.id, text=f"Привет, {message.from_user.first_name}! Вот что нашел в wiki", reply_markup=markup)
 
 
-
 @bot.message_handler(commands=['chatGPT'])
 def chatGPT(message):
     text = ' '.join(message.text.split(' ')[1:])
