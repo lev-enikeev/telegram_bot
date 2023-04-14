@@ -23,13 +23,18 @@ def text_to_speech(message):
         bot.send_audio(message.chat.id, f)
 
 
+@bot.callback_query_handler(func=lambda call: call.data)
+def answer(call):
+    print(call.data)
+
+
 @bot.message_handler(commands=['wiki'])
 def wiki(message):
     text = message.text[6:]
     results = search_wiki(text)
     markup = types.InlineKeyboardMarkup()
     for res in results:
-        btn = types.InlineKeyboardButton(res, callback_data="test")
+        btn = types.InlineKeyboardButton(res, callback_data=res)
         markup.add(btn)
     bot.send_message(message.chat.id, text=f"Привет, {message.from_user.first_name}! Вот что нашел в wiki", reply_markup=markup)
 
