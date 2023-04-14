@@ -3,7 +3,7 @@ from telebot import types
 from hangman_game import HangmanGame
 from text_to_speech import tex_to_speech, speech_to_text
 from chatGPT import talk_to_chatGPT
-from wikipedia_api import search_wiki
+from wikipedia_api import search_wiki, get_page_info
 from credentials import telegramTOKEN
 bot = telebot.TeleBot(telegramTOKEN)
 
@@ -25,7 +25,8 @@ def text_to_speech(message):
 
 @bot.callback_query_handler(func=lambda call: call.data)
 def answer(call):
-    print(call.data)
+    page = get_page_info(call.data)
+    wikipedia.geosearch
 
 
 @bot.message_handler(commands=['wiki'])
