@@ -1,12 +1,13 @@
-import telebot
-from telebot import types
+from telebot import TeleBot, types
 from hangman_game import HangmanGame
 from text_to_speech import tex_to_speech, speech_to_text
 from chatGPT import talk_to_chatGPT
 from wikipedia_api import search_wiki, get_page_info
 from credentials import telegramTOKEN
-bot = telebot.TeleBot(telegramTOKEN)
 
+
+hg = HangmanGame()
+bot = TeleBot(telegramTOKEN)
 
 
 @bot.message_handler(commands=['start'])
@@ -26,7 +27,9 @@ def text_to_speech(message):
 @bot.callback_query_handler(func=lambda call: call.data)
 def answer(call):
     page = get_page_info(call.data)
-    wikipedia.geosearch
+    bot.send_message(call.message.chat.id, text=page.title)
+    bot.send_message(call.message.chat.id, text=page.summary)
+    bot.send_message(call.message.chat.id, text=page.url)
 
 
 @bot.message_handler(commands=['wiki'])
@@ -35,9 +38,11 @@ def wiki(message):
     results = search_wiki(text)
     markup = types.InlineKeyboardMarkup()
     for res in results:
-        btn = types.InlineKeyboardButton(res, callback_data=res)
+        btn = types.InlineKeyboardButton(
+            res, callback_data=res)
         markup.add(btn)
-    bot.send_message(message.chat.id, text=f"Привет, {message.from_user.first_name}! Вот что нашел в wiki", reply_markup=markup)
+    bot.send_message(
+        message.chat.id, text=f"Привет, {message.from_user.first_name}! Вот что нашел в wiki", reply_markup=markup)
 
 
 @bot.message_handler(commands=['chatGPT'])
@@ -56,12 +61,6 @@ def voice_processing(message):
     bot.send_message(message.chat.id, 'обрабатывется...')
     text = speech_to_text()
     bot.send_message(message.chat.id, text)
-
-# =========================================================================
-
-
-hg = HangmanGame()
-hg.game_viseltsa = False
 
 
 @bot.message_handler()

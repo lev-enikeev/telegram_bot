@@ -1,6 +1,6 @@
-1. Установка, первые шаги
-2. Подключаем ChatGPT + API
-3. Игра Висилица 
-4. Подключаем Wikipedia
-5. Text-to-speech
-6. Deploy бота
+1. Установка, первые шаги +
+2. Подключаем ChatGPT + API +
+3. Игра Висилица + 
+4. Подключаем Wikipedia + 
+5. Text-to-speech + 
+6. Deploy бота 
