@@ -75,4 +75,5 @@ def get_user_text(message):
             bot.send_message(message.chat.id, game_message)
 
 
-bot.polling(none_stop=True)
+if __name__ == '__main__':
+    bot.polling(none_stop=True)
